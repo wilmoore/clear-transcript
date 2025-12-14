@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Transcript - Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f5;
+      --text: #0f0f0f;
+      --text-secondary: #606060;
+      --border: #e0e0e0;
+      --accent: #ff0000;
+      --success: #4caf50;
+      --error: #f44336;
+      --radius: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --bg-secondary: #2d2d2d;
+        --text: #ffffff;
+        --text-secondary: #aaaaaa;
+        --border: #3d3d3d;
+      }
+    }
+
+    body {
+      font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .label-hint {
+      font-weight: normal;
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .checkbox-group:hover {
+      background: var(--border);
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .checkbox-label {
+      flex: 1;
+    }
+
+    .checkbox-label span {
+      display: block;
+    }
+
+    .checkbox-label .hint {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text);
+      color: var(--bg);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .toast.error {
+      background: var(--error);
+      color: white;
+    }
+
+    .shortcut-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      font-size: 13px;
+    }
+
+    .shortcut-key {
+      font-family: monospace;
+      background: var(--bg);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <path d="M9 12h6m-6 4h4"/>
+        </svg>
+        Clear Transcript
+      </h1>
+      <p class="subtitle">Settings for YouTube transcript extraction</p>
+    </header>
+
+    <form id="settings-form">
+      <!-- Backend Configuration -->
+      <section class="section">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8m-4-4v4"/>
+          </svg>
+          Backend Service
+        </h2>
+
+        <div class="form-group">
+          <label for="backend-url">
+            Backend URL
+            <span class="label-hint">(optional)</span>
+          </label>
+          <input
+            type="url"
+            id="backend-url"
+            name="backendUrl"
+            placeholder="https://your-transcription-service.com"
+          >
+          <p class="label-hint" style="margin-top: 6px;">
+            Configure a transcription backend for videos without captions
+          </p>
+        </div>
+      </section>
+
+      <!-- Preferences -->
+      <section class="section">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Preferences
+        </h2>
+
+        <div class="form-group">
+          <label for="preferred-language">Preferred Language</label>
+          <select id="preferred-language" name="preferredLanguage">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="pt">Portuguese</option>
+            <option value="it">Italian</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+            <option value="zh">Chinese</option>
+            <option value="ru">Russian</option>
+            <option value="ar">Arabic</option>
+            <option value="hi">Hindi</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="download-format">Default Download Format</label>
+          <select id="download-format" name="defaultDownloadFormat">
+            <option value="srt">SRT (SubRip)</option>
+            <option value="vtt">VTT (WebVTT)</option>
+            <option value="txt">TXT (Plain text)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="dark-mode">Appearance</label>
+          <select id="dark-mode" name="darkMode">
+            <option value="auto">Auto (follow system)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-group">
+            <input type="checkbox" id="auto-open" name="autoOpen">
+            <div class="checkbox-label">
+              <span>Auto-open transcript panel</span>
+              <span class="hint">Automatically open when visiting a video</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-group">
+            <input type="checkbox" id="keyboard-shortcuts" name="keyboardShortcutsEnabled" checked>
+            <div class="checkbox-label">
+              <span>Enable keyboard shortcuts</span>
+              <span class="hint">Use keyboard to control the transcript panel</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Keyboard Shortcuts -->
+      <section class="section">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>
+          </svg>
+          Keyboard Shortcuts
+        </h2>
+
+        <div class="shortcut-list">
+          <div class="shortcut-item">
+            <span>Toggle panel</span>
+            <span class="shortcut-key">T</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Search</span>
+            <span class="shortcut-key">Ctrl/Cmd + F</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Close panel</span>
+            <span class="shortcut-key">Esc</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Navigate lines</span>
+            <span class="shortcut-key">Arrow Up/Down</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Seek to line</span>
+            <span class="shortcut-key">Enter</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Copy transcript</span>
+            <span class="shortcut-key">Ctrl/Cmd + C</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Download transcript</span>
+            <span class="shortcut-key">Ctrl/Cmd + D</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="button-row">
+        <button type="submit" class="btn-primary">Save Settings</button>
+        <button type="button" class="btn-secondary" id="reset-btn">Reset to Defaults</button>
+      </div>
+    </form>
+
+    <footer>
+      <p>Clear Transcript v1.0.0</p>
+      <p><a href="https://github.com/your-repo/clear-transcript" target="_blank">GitHub</a></p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>
