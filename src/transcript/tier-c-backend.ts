@@ -10,6 +10,18 @@ import type { TierCResult, TranscriptLine } from '@/types';
  * Requires a configured backend URL in extension settings
  */
 
+/**
+ * Validate backend URL format
+ */
+function isValidBackendUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 interface BackendResponse {
   status: 'processing' | 'complete' | 'error';
   transcript?: TranscriptLine[];
@@ -24,6 +36,17 @@ export async function submitForTranscription(
   videoId: string,
   backendUrl: string
 ): Promise<TierCResult> {
+  // Validate backend URL
+  if (!isValidBackendUrl(backendUrl)) {
+    return {
+      tier: 'C',
+      source: 'server-transcription',
+      transcript: [],
+      status: 'error',
+      error: 'Invalid backend URL',
+    };
+  }
+
   try {
     const response = await fetch(`${backendUrl}/api/transcribe`, {
       method: 'POST',
@@ -31,6 +54,7 @@ export async function submitForTranscription(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ videoId }),
+      signal: AbortSignal.timeout(30000), // 30 second timeout for submission
     });
 
     if (!response.ok) {
@@ -65,9 +89,23 @@ export async function checkTranscriptionStatus(
   videoId: string,
   backendUrl: string
 ): Promise<TierCResult> {
+  // Validate backend URL
+  if (!isValidBackendUrl(backendUrl)) {
+    return {
+      tier: 'C',
+      source: 'server-transcription',
+      transcript: [],
+      status: 'error',
+      error: 'Invalid backend URL',
+    };
+  }
+
   try {
     const response = await fetch(
-      `${backendUrl}/api/transcript/${encodeURIComponent(videoId)}`
+      `${backendUrl}/api/transcript/${encodeURIComponent(videoId)}`,
+      {
+        signal: AbortSignal.timeout(10000), // 10 second timeout for status check
+      }
     );
 
     if (response.status === 404) {
@@ -176,6 +214,7 @@ export async function cancelTranscription(
       `${backendUrl}/api/transcribe/${encodeURIComponent(videoId)}`,
       {
         method: 'DELETE',
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       }
     );
     return response.ok;

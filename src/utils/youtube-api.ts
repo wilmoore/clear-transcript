@@ -8,6 +8,14 @@ import type {
 } from '@/types';
 
 /**
+ * Validate YouTube video ID format
+ * Valid IDs are 11 characters: alphanumeric, underscores, and hyphens
+ */
+export function isValidVideoId(videoId: string): boolean {
+  return /^[a-zA-Z0-9_-]{11}$/.test(videoId);
+}
+
+/**
  * Extract video ID from YouTube URL
  */
 export function extractVideoId(url: string): string | null {
@@ -21,7 +29,11 @@ export function extractVideoId(url: string): string | null {
   for (const pattern of patterns) {
     const match = url.match(pattern);
     if (match) {
-      return match[1];
+      const videoId = match[1];
+      // Validate the extracted ID
+      if (isValidVideoId(videoId)) {
+        return videoId;
+      }
     }
   }
 
@@ -40,7 +52,12 @@ export function extractPlayerResponse(): YouTubePlayerResponse | null {
       const content = script.textContent || '';
       const match = content.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
       if (match) {
-        return JSON.parse(match[1]) as YouTubePlayerResponse;
+        try {
+          return JSON.parse(match[1]) as YouTubePlayerResponse;
+        } catch (parseError) {
+          console.warn('[ClearTranscript] Failed to parse player response JSON');
+          continue; // Try next script
+        }
       }
     }
 
@@ -89,7 +106,9 @@ export async function fetchTranscript(
   const url = new URL(baseUrl);
   url.searchParams.set('fmt', 'json3');
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    signal: AbortSignal.timeout(15000), // 15 second timeout for transcript fetch
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch transcript: ${response.status}`);
   }
@@ -135,13 +154,18 @@ export function extractDescription(): string | null {
       const content = script.textContent || '';
       const match = content.match(/ytInitialData\s*=\s*({.+?});/);
       if (match) {
-        const data = JSON.parse(match[1]);
-        const description =
-          data?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.find(
-            (c: Record<string, unknown>) => c.videoSecondaryInfoRenderer
-          )?.videoSecondaryInfoRenderer?.attributedDescription?.content;
-        if (description) {
-          return description;
+        try {
+          const data = JSON.parse(match[1]);
+          const description =
+            data?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.find(
+              (c: Record<string, unknown>) => c.videoSecondaryInfoRenderer
+            )?.videoSecondaryInfoRenderer?.attributedDescription?.content;
+          if (description) {
+            return description;
+          }
+        } catch (parseError) {
+          // Failed to parse this script, try next one
+          continue;
         }
       }
     }
@@ -162,27 +186,32 @@ export function extractChapters(): Chapter[] {
       const content = script.textContent || '';
       const match = content.match(/ytInitialData\s*=\s*({.+?});/);
       if (match) {
-        const data = JSON.parse(match[1]);
-        const chapters =
-          data?.playerOverlays?.playerOverlayRenderer?.decoratedPlayerBarRenderer
-            ?.decoratedPlayerBarRenderer?.playerBar?.multiMarkersPlayerBarRenderer
-            ?.markersMap?.[0]?.value?.chapters;
+        try {
+          const data = JSON.parse(match[1]);
+          const chapters =
+            data?.playerOverlays?.playerOverlayRenderer?.decoratedPlayerBarRenderer
+              ?.decoratedPlayerBarRenderer?.playerBar?.multiMarkersPlayerBarRenderer
+              ?.markersMap?.[0]?.value?.chapters;
 
-        if (chapters && Array.isArray(chapters)) {
-          return chapters.map(
-            (chapter: {
-              chapterRenderer: {
-                title: { simpleText: string };
-                timeRangeStartMillis: number;
-                thumbnail?: { thumbnails?: { url: string }[] };
-              };
-            }) => ({
-              title: chapter.chapterRenderer.title.simpleText,
-              start: chapter.chapterRenderer.timeRangeStartMillis / 1000,
-              thumbnailUrl:
-                chapter.chapterRenderer.thumbnail?.thumbnails?.[0]?.url,
-            })
-          );
+          if (chapters && Array.isArray(chapters)) {
+            return chapters.map(
+              (chapter: {
+                chapterRenderer: {
+                  title: { simpleText: string };
+                  timeRangeStartMillis: number;
+                  thumbnail?: { thumbnails?: { url: string }[] };
+                };
+              }) => ({
+                title: chapter.chapterRenderer.title.simpleText,
+                start: chapter.chapterRenderer.timeRangeStartMillis / 1000,
+                thumbnailUrl:
+                  chapter.chapterRenderer.thumbnail?.thumbnails?.[0]?.url,
+              })
+            );
+          }
+        } catch (parseError) {
+          // Failed to parse this script, try next one
+          continue;
         }
       }
     }

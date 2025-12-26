@@ -74,6 +74,8 @@ function getSourceClass(result: TranscriptResult): string {
       return 'ct-source-fallback';
     case 'server-transcription':
       return result.status === 'complete' ? 'ct-source-server' : 'ct-source-processing';
+    default:
+      return 'ct-source-fallback';
   }
 }
 

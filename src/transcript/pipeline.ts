@@ -8,6 +8,20 @@ import {
 
 export type TranscriptCallback = (result: TranscriptResult) => void;
 
+// Track active polls to prevent race conditions
+const activePolls = new Map<string, { cancel: () => void }>();
+
+/**
+ * Cancel any active poll for a video
+ */
+export function cancelActivePoll(videoId: string): void {
+  const activePoll = activePolls.get(videoId);
+  if (activePoll) {
+    activePoll.cancel();
+    activePolls.delete(videoId);
+  }
+}
+
 /**
  * Main transcript retrieval pipeline
  *
@@ -136,19 +150,42 @@ async function startTierCInBackground(
 }
 
 /**
- * Poll for Tier C completion
+ * Poll for Tier C completion with cancellation support
  */
-async function pollForCompletion(
+function pollForCompletion(
   videoId: string,
   backendUrl: string,
   onUpdate: TranscriptCallback,
   maxAttempts = 60,
   intervalMs = 5000
-): Promise<void> {
+): void {
+  // Cancel any existing poll for this video
+  cancelActivePoll(videoId);
+
   let attempts = 0;
+  let cancelled = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  // Register this poll in activePolls
+  activePolls.set(videoId, {
+    cancel: () => {
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      activePolls.delete(videoId);
+    },
+  });
 
   const poll = async () => {
+    // Check if cancelled before proceeding
+    if (cancelled) {
+      return;
+    }
+
     if (attempts >= maxAttempts) {
+      activePolls.delete(videoId);
       onUpdate({
         tier: 'C',
         source: 'server-transcription',
@@ -159,12 +196,38 @@ async function pollForCompletion(
       return;
     }
 
-    const result = await checkTranscriptionStatus(videoId, backendUrl);
-    onUpdate(result);
+    try {
+      const result = await checkTranscriptionStatus(videoId, backendUrl);
 
-    if (result.status === 'processing') {
-      attempts++;
-      setTimeout(poll, intervalMs);
+      // Check again after async operation
+      if (cancelled) {
+        return;
+      }
+
+      onUpdate(result);
+
+      if (result.status === 'processing') {
+        attempts++;
+        timeoutId = setTimeout(poll, intervalMs);
+      } else {
+        // Complete or error - remove from active polls
+        activePolls.delete(videoId);
+      }
+    } catch (error) {
+      // Check if cancelled during error
+      if (cancelled) {
+        return;
+      }
+
+      console.error('[ClearTranscript] Poll error:', error);
+      activePolls.delete(videoId);
+      onUpdate({
+        tier: 'C',
+        source: 'server-transcription',
+        transcript: [],
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Poll failed',
+      });
     }
   };
 
@@ -184,6 +247,8 @@ export function getSourceLabel(result: TranscriptResult): string {
       return 'Partial content';
     case 'server-transcription':
       return 'Server transcription';
+    default:
+      return 'Unknown source';
   }
 }
 

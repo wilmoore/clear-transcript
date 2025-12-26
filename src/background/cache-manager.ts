@@ -155,7 +155,7 @@ function getTTLForResult(result: TranscriptResult): number {
  */
 async function getCacheIndex(): Promise<Record<string, number>> {
   const result = await chrome.storage.local.get(CACHE_INDEX_KEY);
-  return result[CACHE_INDEX_KEY] || {};
+  return (result[CACHE_INDEX_KEY] as Record<string, number>) || {};
 }
 
 /**

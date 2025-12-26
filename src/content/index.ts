@@ -4,7 +4,7 @@ import { extractVideoId } from '@/utils/youtube-api';
 import { getPageState, shouldInjectUI, watchPageState, getVideoTitle } from './page-detector';
 import { createNavigationObserver, waitForPlayer } from './navigation-observer';
 import { injectUI, removeUI, getUIController, updateUIForState } from './ui-injector';
-import { getTranscript, getTranscriptForLanguage, getSourceLabel } from '@/transcript/pipeline';
+import { getTranscript, getTranscriptForLanguage, getSourceLabel, cancelActivePoll } from '@/transcript/pipeline';
 
 /**
  * Content Script Entry Point
@@ -54,6 +54,15 @@ async function init(): Promise<void> {
   document.addEventListener('keydown', handleKeyDown);
   cleanupFunctions.push(() => document.removeEventListener('keydown', handleKeyDown));
 
+  // Listen for language change events from shadow DOM
+  const handleLanguageChangeEvent = ((e: CustomEvent<{ languageCode: string }>) => {
+    if (e.detail?.languageCode) {
+      changeLanguage(e.detail.languageCode);
+    }
+  }) as EventListener;
+  document.addEventListener('ct-language-change', handleLanguageChangeEvent);
+  cleanupFunctions.push(() => document.removeEventListener('ct-language-change', handleLanguageChangeEvent));
+
   // Initial page check
   const state = getPageState();
   if (shouldInjectUI()) {
@@ -72,6 +81,12 @@ async function handleVideoChange(videoId: string | null): Promise<void> {
   if (videoId === currentVideoId) return;
 
   console.log('[ClearTranscript] Video changed:', videoId);
+
+  // Cancel any pending poll for the old video
+  if (currentVideoId) {
+    cancelActivePoll(currentVideoId);
+  }
+
   currentVideoId = videoId;
   currentTranscript = null;
 
@@ -262,6 +277,12 @@ async function fetchTranscript(videoId: string): Promise<void> {
       handleTranscriptUpdate
     );
 
+    // Check if video changed during fetch - don't update if stale
+    if (videoId !== currentVideoId) {
+      console.log('[ClearTranscript] Video changed during fetch, ignoring result');
+      return;
+    }
+
     currentTranscript = result;
 
     if (controller) {
@@ -272,6 +293,11 @@ async function fetchTranscript(videoId: string): Promise<void> {
     // Cache result
     cacheTranscript(videoId, result);
   } catch (error) {
+    // Check if video changed during fetch - don't show error if stale
+    if (videoId !== currentVideoId) {
+      return;
+    }
+
     console.error('[ClearTranscript] Transcript fetch failed:', error);
     if (controller) {
       controller.setError(

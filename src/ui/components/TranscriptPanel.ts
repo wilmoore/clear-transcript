@@ -430,4 +430,3 @@ function injectPanelStyles(container: HTMLElement): void {
   container.appendChild(style);
 }
 
-export { TranscriptPanelController };

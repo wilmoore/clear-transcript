@@ -3,10 +3,11 @@ import type {
   GetTranscriptMessage,
   ChangeLanguageMessage,
   SubmitTierCMessage,
+  CacheTranscriptMessage,
   TranscriptResult,
   ExtensionSettings,
-  DEFAULT_SETTINGS,
 } from '@/types';
+import { DEFAULT_SETTINGS } from '@/types';
 import { getCachedTranscript, cacheTranscript } from './cache-manager';
 
 type SendResponse = (response: unknown) => void;
@@ -47,6 +48,10 @@ async function handleMessage(
 
       case 'GET_SETTINGS':
         await handleGetSettings(sendResponse);
+        break;
+
+      case 'CACHE_TRANSCRIPT':
+        await handleCacheTranscript(message, sendResponse);
         break;
 
       default:
@@ -157,11 +162,23 @@ async function handleGetSettings(sendResponse: SendResponse): Promise<void> {
 }
 
 /**
+ * Handle CACHE_TRANSCRIPT request
+ */
+async function handleCacheTranscript(
+  message: CacheTranscriptMessage,
+  sendResponse: SendResponse
+): Promise<void> {
+  const { videoId, result } = message;
+  await cacheTranscript(videoId, result);
+  sendResponse({ success: true });
+}
+
+/**
  * Get extension settings from storage
  */
 async function getSettings(): Promise<ExtensionSettings> {
   const result = await chrome.storage.sync.get('settings');
-  return result.settings || DEFAULT_SETTINGS;
+  return (result.settings as ExtensionSettings) || DEFAULT_SETTINGS;
 }
 
 /**
