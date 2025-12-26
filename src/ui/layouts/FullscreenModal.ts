@@ -84,8 +84,11 @@ export function createFullscreenModal(
     panelController = createTranscriptPanel(content, {
       settings,
       onLanguageChange: (languageCode) => {
+        // Dispatch event with bubbles and composed to cross shadow DOM boundary
         const event = new CustomEvent('ct-language-change', {
           detail: { languageCode },
+          bubbles: true,
+          composed: true,
         });
         shadow.dispatchEvent(event);
       },

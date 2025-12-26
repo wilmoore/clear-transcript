@@ -9,6 +9,9 @@ import { extractVideoId } from '@/utils/youtube-api';
 
 export type NavigationCallback = (videoId: string | null) => void;
 
+// Debounce timer for video change checks
+let checkVideoChangeTimer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Create a navigation observer that watches for video changes
  */
@@ -17,13 +20,18 @@ export function createNavigationObserver(
 ): () => void {
   let currentVideoId = extractVideoId(window.location.href);
 
-  // Check for video change
+  // Debounced check for video change to prevent rapid-fire callbacks
   const checkVideoChange = () => {
-    const newVideoId = extractVideoId(window.location.href);
-    if (newVideoId !== currentVideoId) {
-      currentVideoId = newVideoId;
-      callback(newVideoId);
+    if (checkVideoChangeTimer) {
+      clearTimeout(checkVideoChangeTimer);
     }
+    checkVideoChangeTimer = setTimeout(() => {
+      const newVideoId = extractVideoId(window.location.href);
+      if (newVideoId !== currentVideoId) {
+        currentVideoId = newVideoId;
+        callback(newVideoId);
+      }
+    }, 50);
   };
 
   // Method 1: Watch for URL changes via history API
@@ -62,7 +70,7 @@ export function createNavigationObserver(
     }
   });
 
-  // Observe the video player container
+  // Observe the video player container (only if it exists)
   const playerContainer = document.querySelector('#movie_player');
   if (playerContainer) {
     observer.observe(playerContainer, {
@@ -71,25 +79,31 @@ export function createNavigationObserver(
     });
   }
 
-  // Method 5: Watch for changes to the page content
-  const contentObserver = new MutationObserver((mutations) => {
-    // Check if we're on a watch page and the content changed significantly
-    if (window.location.pathname === '/watch') {
-      checkVideoChange();
-    }
+  // Method 5: Watch for changes to Shorts content
+  // Only observe if shorts container exists to prevent unnecessary observers
+  const contentObserver = new MutationObserver(() => {
+    // Debounced via checkVideoChange
+    checkVideoChange();
   });
 
-  // Observe the main content area for Shorts
   const shortsContainer = document.querySelector('ytd-shorts');
   if (shortsContainer) {
     contentObserver.observe(shortsContainer, {
       childList: true,
-      subtree: true,
+      subtree: false, // Reduced scope - only direct children
+      attributes: true,
+      attributeFilter: ['is-active'],
     });
   }
 
   // Return cleanup function
   return () => {
+    // Clear any pending timers
+    if (checkVideoChangeTimer) {
+      clearTimeout(checkVideoChangeTimer);
+      checkVideoChangeTimer = null;
+    }
+
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
     window.removeEventListener('popstate', popstateHandler);

@@ -12,7 +12,7 @@
     "https://youtube.com/*"
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "src/background/service-worker.ts",
     "type": "module"
   },
   "content_scripts": [
@@ -21,13 +21,13 @@
         "https://www.youtube.com/*",
         "https://youtube.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["src/content/index.ts"],
       "css": [],
       "run_at": "document_idle"
     }
   ],
   "options_ui": {
-    "page": "options/index.html",
+    "page": "src/options/index.html",
     "open_in_tab": true
   },
   "icons": {
@@ -42,15 +42,6 @@
       "32": "icons/icon-32.png"
     },
     "default_title": "Clear Transcript"
-  },
-  "commands": {
-    "toggle-transcript": {
-      "suggested_key": {
-        "default": "Alt+T",
-        "mac": "Alt+T"
-      },
-      "description": "Toggle transcript panel"
-    }
   },
   "web_accessible_resources": [
     {

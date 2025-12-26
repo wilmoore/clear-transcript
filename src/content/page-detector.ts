@@ -106,6 +106,7 @@ export function watchPageState(
   callback: (state: PageState) => void
 ): () => void {
   let currentState = getPageState();
+  let theaterObserver: MutationObserver | null = null;
 
   // Watch for fullscreen changes
   const fullscreenHandler = () => {
@@ -118,16 +119,21 @@ export function watchPageState(
   document.addEventListener('fullscreenchange', fullscreenHandler);
 
   // Watch for theater mode changes
-  const theaterObserver = new MutationObserver(() => {
-    const newState = getPageState();
-    if (newState.mode !== currentState.mode) {
-      currentState = newState;
-      callback(currentState);
-    }
-  });
-
   const watchFlexy = document.querySelector('ytd-watch-flexy');
-  if (watchFlexy) {
+  if (watchFlexy && watchFlexy.isConnected) {
+    theaterObserver = new MutationObserver(() => {
+      // Verify element is still connected to DOM
+      if (!watchFlexy.isConnected) {
+        theaterObserver?.disconnect();
+        return;
+      }
+      const newState = getPageState();
+      if (newState.mode !== currentState.mode) {
+        currentState = newState;
+        callback(currentState);
+      }
+    });
+
     theaterObserver.observe(watchFlexy, {
       attributes: true,
       attributeFilter: ['theater', 'fullscreen'],
@@ -137,7 +143,8 @@ export function watchPageState(
   // Return cleanup function
   return () => {
     document.removeEventListener('fullscreenchange', fullscreenHandler);
-    theaterObserver.disconnect();
+    theaterObserver?.disconnect();
+    theaterObserver = null;
   };
 }
 

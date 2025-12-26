@@ -23,7 +23,7 @@ const keyboardShortcuts = document.getElementById('keyboard-shortcuts') as HTMLI
 async function loadSettings(): Promise<void> {
   try {
     const result = await chrome.storage.sync.get('settings');
-    const settings: ExtensionSettings = result.settings || DEFAULT_SETTINGS;
+    const settings: ExtensionSettings = (result.settings as ExtensionSettings) || DEFAULT_SETTINGS;
 
     backendUrl.value = settings.backendUrl || '';
     preferredLanguage.value = settings.preferredLanguage;

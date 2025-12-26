@@ -1,0 +1,13 @@
+{
+  "lastSequence": 3,
+  "entries": [
+    {
+      "branch": "fix/comprehensive-gap-analysis",
+      "adrs": [
+        "001-tiered-transcript-retrieval-pipeline.md",
+        "002-poll-cancellation-for-race-condition-prevention.md",
+        "003-vitest-with-happy-dom-for-unit-testing.md"
+      ]
+    }
+  ]
+}

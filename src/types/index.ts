@@ -84,7 +84,9 @@ export type MessageType =
   | 'SUBMIT_TIER_C'
   | 'GET_SETTINGS'
   | 'SETTINGS_RESULT'
-  | 'VIDEO_CHANGED';
+  | 'VIDEO_CHANGED'
+  | 'TOGGLE_PANEL'
+  | 'CACHE_TRANSCRIPT';
 
 export interface GetTranscriptMessage {
   type: 'GET_TRANSCRIPT';
@@ -129,6 +131,16 @@ export interface VideoChangedMessage {
   videoId: string;
 }
 
+export interface TogglePanelMessage {
+  type: 'TOGGLE_PANEL';
+}
+
+export interface CacheTranscriptMessage {
+  type: 'CACHE_TRANSCRIPT';
+  videoId: string;
+  result: TranscriptResult;
+}
+
 export type Message =
   | GetTranscriptMessage
   | TranscriptResultMessage
@@ -137,7 +149,9 @@ export type Message =
   | SubmitTierCMessage
   | GetSettingsMessage
   | SettingsResultMessage
-  | VideoChangedMessage;
+  | VideoChangedMessage
+  | TogglePanelMessage
+  | CacheTranscriptMessage;
 
 // ============================================================================
 // Settings Types
